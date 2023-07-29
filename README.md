@@ -102,7 +102,7 @@ export default function Home() {
 
   useEffect(() => {
     async function getTweet() {
-      const latestTweet = await scraper.getLatestTweet("twitter");
+      const latestTweet = await scraper.getLatestTweet("Support");
       if (latestTweet) {
         setTweet(latestTweet);
       }
