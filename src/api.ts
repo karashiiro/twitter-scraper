@@ -1,6 +1,5 @@
 import { TwitterAuth } from './auth';
 import { ApiError } from './errors';
-import { updateCookieJar } from './requests';
 import { Headers } from 'headers-polyfill';
 
 // For some reason using Parameters<typeof fetch> reduces the request transform function to
@@ -71,8 +70,6 @@ export async function requestApi<T>(
         err: new Error('Failed to perform request.'),
       };
     }
-
-    await updateCookieJar(auth.cookieJar(), res.headers);
 
     if (res.status === 429) {
       /*

@@ -69,14 +69,22 @@ export interface TwitterAuth {
  */
 function withTransform(
   fetchFn: typeof fetch,
+  cookieJar: CookieJar,
   transform?: Partial<FetchTransformOptions>,
 ): typeof fetch {
   return async (input, init) => {
-    const fetchArgs = (await transform?.request?.(input, init)) ?? [
+    const [fetchInput, fetchInit] = (await transform?.request?.(
       input,
       init,
-    ];
-    const res = await fetchFn(...fetchArgs);
+    )) ?? [input, init];
+    const res = await fetchFn(fetchInput, fetchInit);
+    if (typeof fetchInput === 'string') {
+      await updateCookieJar(cookieJar, fetchInput, res.headers);
+    } else if (fetchInput instanceof URL) {
+      await updateCookieJar(cookieJar, fetchInput.toString(), res.headers);
+    } else if (fetchInput instanceof Request) {
+      await updateCookieJar(cookieJar, fetchInput.url, res.headers);
+    }
     return (await transform?.response?.(res)) ?? res;
   };
 }
@@ -96,9 +104,13 @@ export class TwitterGuestAuth implements TwitterAuth {
     bearerToken: string,
     protected readonly options?: Partial<TwitterAuthOptions>,
   ) {
-    this.fetch = withTransform(options?.fetch ?? fetch, options?.transform);
     this.bearerToken = bearerToken;
     this.jar = new CookieJar();
+    this.fetch = withTransform(
+      options?.fetch ?? fetch,
+      this.jar,
+      options?.transform,
+    );
   }
 
   cookieJar(): CookieJar {
@@ -174,8 +186,6 @@ export class TwitterGuestAuth implements TwitterAuth {
       method: 'POST',
       headers: headers,
     });
-
-    await updateCookieJar(this.jar, res.headers);
 
     if (!res.ok) {
       throw new Error(await res.text());

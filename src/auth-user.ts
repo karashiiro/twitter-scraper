@@ -1,7 +1,6 @@
 import { TwitterAuthOptions, TwitterGuestAuth } from './auth';
 import { requestApi } from './api';
 import { CookieJar } from 'tough-cookie';
-import { updateCookieJar } from './requests';
 import { Headers } from 'headers-polyfill';
 
 interface TwitterUserAuthFlowInitRequest {
@@ -234,8 +233,6 @@ export class TwitterUserAuth extends TwitterGuestAuth {
       headers: headers,
       body: JSON.stringify(data),
     });
-
-    await updateCookieJar(this.jar, res.headers);
 
     if (!res.ok) {
       return { status: 'error', err: new Error(await res.text()) };
